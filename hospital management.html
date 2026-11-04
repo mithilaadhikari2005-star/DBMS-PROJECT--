@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Hospital Management System</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial;
+}
+
+body{
+background:#f4f7fc;
+}
+
+header{
+background:#1565c0;
+color:white;
+padding:20px;
+text-align:center;
+}
+
+.container{
+width:90%;
+margin:auto;
+padding:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+margin-bottom:20px;
+border-radius:10px;
+box-shadow:0px 3px 10px rgba(0,0,0,0.12);
+}
+
+input, select, textarea{
+width:100%;
+padding:10px;
+margin-top:8px;
+margin-bottom:15px;
+border:1px solid #ccc;
+border-radius:5px;
+}
+
+button{
+background:#1565c0;
+color:white;
+border:none;
+padding:10px 20px;
+cursor:pointer;
+border-radius:5px;
+}
+
+button:hover{
+background:#0d47a1;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:10px;
+}
+
+table,th,td{
+border:1px solid #ddd;
+}
+
+th{
+background:#1565c0;
+color:white;
+}
+
+th,td{
+padding:10px;
+text-align:center;
+}
+
+.success{
+color:green;
+font-weight:bold;
+}
+
+.warning{
+color:red;
+font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>Hospital Management System</h1>
+</header>
+
+<div class="container">
+
+<div class="card">
+<h2>Register Patient</h2>
+
+<input type="text" id="name" placeholder="Patient Name">
+
+<input type="text" id="contact" placeholder="Contact Number">
+
+<select id="consultation">
+<option>General Physician</option>
+<option>Cardiology</option>
+<option>Dermatology</option>
+<option>Orthopedic</option>
+</select>
+
+<button onclick="registerPatient()">
+Register Patient
+</button>
+
+<p id="doctorSuggestion"></p>
+
+</div>
+
+<div class="card">
+<h2>Book Appointment</h2>
+
+<select id="patientSelect"></select>
+
+<input type="date" id="appointmentDate">
+
+<input type="time" id="appointmentTime">
+
+<button onclick="bookAppointment()">
+Book Appointment
+</button>
+
+<p id="appointmentMessage"></p>
+
+</div>
+
+<div class="card">
+<h2>Prescription</h2>
+
+<select id="prescriptionPatient"></select>
+
+<textarea id="diagnosis"
+placeholder="Diagnosis"></textarea>
+
+<textarea id="medicine"
+placeholder="Medicines"></textarea>
+
+<input type="date" id="followup">
+
+<button onclick="savePrescription()">
+Save Prescription
+</button>
+
+</div>
+
+<div class="card">
+<h2>Patient Records</h2>
+
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Contact</th>
+<th>Consultation</th>
+<th>Doctor</th>
+</tr>
+</thead>
+
+<tbody id="patientTable"></tbody>
+
+</table>
+</div>
+
+<div class="card">
+<h2>Appointments</h2>
+
+<table>
+<thead>
+<tr>
+<th>Patient</th>
+<th>Doctor</th>
+<th>Date</th>
+<th>Time</th>
+</tr>
+</thead>
+
+<tbody id="appointmentTable"></tbody>
+
+</table>
+</div>
+
+<div class="card">
+<h2>Follow-Up Reminders</h2>
+<div id="reminders"></div>
+</div>
+
+</div>
+
+<script>
+
+let patients =
+JSON.parse(localStorage.getItem("patients")) || [];
+
+let appointments =
+JSON.parse(localStorage.getItem("appointments")) || [];
+
+let prescriptions =
+JSON.parse(localStorage.getItem("prescriptions")) || [];
+
+function recommendDoctor(type){
+
+switch(type){
+
+case "Cardiology":
+return "Dr Sharma";
+
+case "Dermatology":
+return "Dr Gupta";
+
+case "Orthopedic":
+return "Dr Singh";
+
+default:
+return "Dr Verma";
+}
+}
+
+function registerPatient(){
+
+let name =
+document.getElementById("name").value;
+
+let contact =
+document.getElementById("contact").value;
+
+let consultation =
+document.getElementById("consultation").value;
+
+if(name=="" || contact==""){
+alert("Please fill all fields");
+return;
+}
+
+let doctor =
+recommendDoctor(consultation);
+
+patients.push({
+name,
+contact,
+consultation,
+doctor
+});
+
+localStorage.setItem(
+"patients",
+JSON.stringify(patients)
+);
+
+document.getElementById(
+"doctorSuggestion"
+).innerHTML=
+"<span class='success'>Recommended Doctor : "
++ doctor +
+"</span>";
+
+loadPatients();
+
+document.getElementById("name").value="";
+document.getElementById("contact").value="";
+}
+
+function loadPatients(){
+
+let table="";
+
+let dropdown="";
+let dropdown2="";
+
+patients.forEach((p,index)=>{
+
+table+=`
+<tr>
+<td>${p.name}</td>
+<td>${p.contact}</td>
+<td>${p.consultation}</td>
+<td>${p.doctor}</td>
+</tr>
+`;
+
+dropdown+=`
+<option value="${index}">
+${p.name}
+</option>
+`;
+
+dropdown2+=`
+<option value="${index}">
+${p.name}
+</option>
+`;
+
+});
+
+document.getElementById(
+"patientTable"
+).innerHTML=table;
+
+document.getElementById(
+"patientSelect"
+).innerHTML=dropdown;
+
+document.getElementById(
+"prescriptionPatient"
+).innerHTML=dropdown2;
+}
+
+function bookAppointment(){
+
+let patientIndex=
+document.getElementById(
+"patientSelect"
+).value;
+
+let patient=
+patients[patientIndex];
+
+let date=
+document.getElementById(
+"appointmentDate"
+).value;
+
+let time=
+document.getElementById(
+"appointmentTime"
+).value;
+
+let doctor=
+patient.doctor;
+
+let clash=
+appointments.find(a=>
+
+a.doctor===doctor &&
+a.date===date &&
+a.time===time
+
+);
+
+if(clash){
+
+document.getElementById(
+"appointmentMessage"
+).innerHTML=
+"<span class='warning'>Doctor already booked at that time.</span>";
+
+return;
+}
+
+appointments.push({
+
+patient:patient.name,
+doctor:doctor,
+date:date,
+time:time
+
+});
+
+localStorage.setItem(
+"appointments",
+JSON.stringify(appointments)
+);
+
+document.getElementById(
+"appointmentMessage"
+).innerHTML=
+"<span class='success'>Appointment Confirmed</span>";
+
+loadAppointments();
+}
+
+function loadAppointments(){
+
+let rows="";
+
+appointments.forEach(a=>{
+
+rows+=`
+<tr>
+<td>${a.patient}</td>
+<td>${a.doctor}</td>
+<td>${a.date}</td>
+<td>${a.time}</td>
+</tr>
+`;
+
+});
+
+document.getElementById(
+"appointmentTable"
+).innerHTML=rows;
+}
+
+function savePrescription(){
+
+let patientIndex=
+document.getElementById(
+"prescriptionPatient"
+).value;
+
+let diagnosis=
+document.getElementById(
+"diagnosis"
+).value;
+
+let medicine=
+document.getElementById(
+"medicine"
+).value;
+
+let followup=
+document.getElementById(
+"followup"
+).value;
+
+prescriptions.push({
+
+patient:patients[patientIndex].name,
+diagnosis,
+medicine,
+followup
+
+});
+
+localStorage.setItem(
+"prescriptions",
+JSON.stringify(prescriptions)
+);
+
+alert("Prescription Saved");
+
+showReminders();
+}
+
+function showReminders(){
+
+let div="";
+
+prescriptions.forEach(p=>{
+
+div+=`
+<p>
+<b>${p.patient}</b> :
+Follow-up on
+${p.followup}
+</p>
+`;
+
+});
+
+document.getElementById(
+"reminders"
+).innerHTML=div;
+}
+
+loadPatients();
+loadAppointments();
+showReminders();
+
+</script>
+
+</body>
+</html>
